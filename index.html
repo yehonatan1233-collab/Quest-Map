@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>DevOps Quest Map</title>
+<meta name="theme-color" content="#fbf7ef" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Quest Map" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-180.png" />
+<link rel="manifest" href="manifest.webmanifest" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap');
+
+  :root{
+    --ink:#33302b; --ink-soft:#5f594f; --faint:#938d81;
+    --paper:#fbf7ef; --line:#e7dfcf;
+    --disp:'Shantell Sans','Comic Sans MS',cursive;
+    --body:'Nunito',system-ui,sans-serif;
+    --mono:ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+    --wobble:255px 18px 225px 18px/18px 225px 18px 255px;
+    --wobble2:18px 225px 18px 255px/225px 18px 255px 18px;
+    --shadow:5px 6px 0 rgba(51,48,43,.12);
+  }
+  .tier-1{--accent:#16a34a; --soft:#e7f8ec; --border:#4ade80;}
+  .tier-2{--accent:#2563eb; --soft:#e6effc; --border:#60a5fa;}
+  .tier-3{--accent:#c2740a; --soft:#fdf3da; --border:#f0b429;}
+  .tier-4{--accent:#ea580c; --soft:#ffeede; --border:#fb923c;}
+  .tier-5{--accent:#dc2626; --soft:#fde9e9; --border:#f87171;}
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{
+    font-family:var(--body); color:var(--ink);
+    padding:max(22px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(48px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
+    background-color:var(--paper);
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:26px 26px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{max-width:1080px; margin:0 auto;}
+
+  .head{text-align:center; margin-bottom:18px;}
+  .head h1{font-family:var(--disp); font-weight:700; font-size:clamp(32px,7vw,52px); margin:0; color:#2a2722; line-height:1.08;}
+  .head p{font-family:var(--disp); font-weight:500; font-size:clamp(15px,3.4vw,21px); margin:6px 0 0; color:var(--faint);}
+
+  .xp{background:#fff; border:3px solid #2a2722; border-radius:var(--wobble); padding:18px 20px; box-shadow:var(--shadow); margin-bottom:16px;}
+  .xp-top{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px;}
+  .xp-lvl{display:flex; align-items:center; gap:12px;}
+  .xp-emoji{font-size:clamp(34px,8vw,46px);}
+  .xp-eyebrow{font-family:var(--disp); font-weight:600; font-size:12px; letter-spacing:.5px; color:var(--faint); text-transform:uppercase;}
+  .xp-title{font-family:var(--disp); font-weight:700; font-size:clamp(23px,5vw,32px); line-height:1; color:#2a2722;}
+  .xp-count{text-align:right;}
+  .xp-num{font-family:var(--disp); font-weight:700; font-size:clamp(28px,6vw,40px); color:#16a34a; line-height:1;}
+  .xp-num span{color:#cfc8bb;}
+  .xp-numlabel{font-family:var(--disp); font-weight:500; font-size:14px; color:var(--faint);}
+
+  .bar{margin-top:14px; height:24px; background:#efe9dd; border-radius:999px; border:2px solid #2a2722; overflow:hidden;}
+  .bar-fill{height:100%; border-radius:999px; width:0; transition:width .55s cubic-bezier(.34,1.4,.5,1);
+    background:repeating-linear-gradient(45deg,#22c55e,#22c55e 12px,#16a34a 12px,#16a34a 24px); background-size:60px 60px; animation:shine 1.2s linear infinite;}
+  @keyframes shine{from{background-position:0 0}to{background-position:60px 0}}
+
+  .xp-foot{margin-top:9px; display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; align-items:center;}
+  .xp-next{font-family:var(--disp); font-weight:600; font-size:16px; color:var(--ink-soft);}
+  .ctrls{display:flex; gap:8px; flex-wrap:wrap;}
+  .reset{font-family:var(--disp); font-weight:600; font-size:14px; color:var(--faint); background:transparent; border:2px solid #e0d9cb; border-radius:var(--wobble2); padding:5px 14px; cursor:pointer;}
+  .reset:hover{background:#f3ede1;}
+
+  .badges{margin-top:12px; display:flex; flex-wrap:wrap; gap:8px;}
+  .badge{font-family:var(--disp); font-weight:600; font-size:13px; padding:3px 11px; border-radius:999px; border:2px solid #e0d9cb; background:#faf6ee; color:#bdb6a8;}
+  .badge.on{border-color:var(--bc); background:var(--bs); color:var(--ba);}
+
+  .focus-banner{background:#fff8e6; border:3px dashed #f0b429; border-radius:var(--wobble2); padding:13px 16px; margin-bottom:16px; display:flex; align-items:center; gap:10px;}
+  .focus-banner .z{font-size:24px;}
+  .focus-banner span{font-family:var(--disp); font-weight:500; font-size:clamp(15px,3.6vw,18px); color:#7a5a0a;}
+  .focus-banner b{font-weight:700;}
+  .hint{font-family:var(--disp); font-weight:500; font-size:14px; color:var(--faint); text-align:center; margin-bottom:16px;}
+
+  .tier{margin-bottom:28px;}
+  .tier-head{position:relative; background:var(--soft); border:3px solid var(--accent); border-radius:var(--wobble); padding:10px 16px; margin-bottom:14px; transform:rotate(-.5deg);}
+  .tier-head .row{display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:6px;}
+  .tier-head h2{font-family:var(--disp); font-weight:700; font-size:clamp(20px,4.6vw,29px); margin:0; color:var(--accent);}
+  .tier-head .frac{font-family:var(--disp); font-weight:600; font-size:16px; color:var(--accent);}
+  .tier-head p{font-family:var(--disp); font-weight:500; font-size:clamp(14px,3.2vw,17px); margin:2px 0 0; color:var(--ink-soft);}
+  .stamp{position:absolute; top:-15px; right:10px; font-family:var(--disp); font-weight:700; font-size:17px; color:#fff; background:var(--accent); padding:3px 13px; border-radius:var(--wobble2); transform:rotate(-8deg); box-shadow:2px 2px 0 rgba(0,0,0,.15); animation:stamp .35s ease;}
+  @keyframes stamp{from{transform:rotate(-8deg) scale(1.6); opacity:0}to{transform:rotate(-8deg) scale(1); opacity:1}}
+
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:12px;}
+
+  .card{background:#fff; border:3px solid #2a2722; border-radius:var(--wobble); padding:14px 16px; box-shadow:var(--shadow); transition:box-shadow .2s,border-color .2s,background .2s;}
+  .card.done{background:var(--soft); border-color:var(--border);}
+  .card.active{border-color:#f0b429; box-shadow:0 0 0 4px rgba(240,180,41,.35),4px 5px 0 rgba(51,48,43,.10);}
+  .card-top{display:flex; align-items:flex-start; gap:10px;}
+  .card-emoji{font-size:30px; line-height:1; flex-shrink:0;}
+  .card-name{font-family:var(--disp); font-weight:700; font-size:20px; color:#2a2722; line-height:1.12;}
+  .card-time{font-family:var(--disp); font-weight:600; font-size:13px; color:var(--accent);}
+  .circle{width:36px; height:36px; flex-shrink:0; border-radius:50%; cursor:pointer; border:3px solid #cfc8bb; background:#fff; color:#fff; font-size:19px; font-weight:bold; display:flex; align-items:center; justify-content:center; line-height:1;}
+  .card.done .circle{border-color:var(--accent); background:var(--accent); animation:pop .35s ease;}
+  @keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.14)}100%{transform:scale(1)}}
+  .card-what{font-family:var(--body); font-weight:600; font-size:14.5px; color:var(--ink-soft); margin:10px 0 0; line-height:1.45;}
+
+  .card-btns{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;}
+  .btn{font-family:var(--disp); font-weight:600; font-size:14px; cursor:pointer; padding:5px 13px; border-radius:var(--wobble2); border:2px solid #e0d9cb; background:#faf6ee; color:#8a8479; display:inline-flex; align-items:center; gap:5px;}
+  .btn:hover{background:#f1ece1;}
+  .btn.focus.on{border-color:#c2740a; background:#fff3d6; color:#c2740a;}
+  .chev{display:inline-block; transition:transform .2s;}
+  .card.open .chev{transform:rotate(180deg);}
+
+  .panel{margin-top:12px; padding-top:12px; border-top:2px dashed #e6dfd0;}
+  .panel h4{font-family:var(--disp); font-weight:700; font-size:15.5px; color:var(--accent); margin:0 0 4px;}
+  .panel .sub{font-family:var(--disp); font-weight:500; font-size:12.5px; color:var(--faint); margin:-2px 0 6px;}
+  .panel p{font-family:var(--body); font-weight:600; font-size:13.5px; color:var(--ink-soft); margin:0 0 14px; line-height:1.5;}
+  .prep,.steps{margin:0 0 14px; padding-left:20px;}
+  .prep li,.steps li{font-family:var(--body); font-weight:600; font-size:13.5px; color:var(--ink-soft); margin-bottom:7px; line-height:1.5;}
+  .done-box{background:var(--soft); border:2px solid var(--border); border-radius:var(--wobble2); padding:9px 13px; margin:0 0 14px;}
+  .done-box .lab{font-family:var(--disp); font-weight:700; font-size:14px; color:var(--accent);}
+  .done-box .txt{font-family:var(--body); font-weight:700; font-size:13.5px; color:var(--ink); line-height:1.45;}
+  code.cmd{font-family:var(--mono); background:#f3eee1; border:1px solid #e3dccb; border-radius:6px; padding:1px 6px; font-size:12.5px; color:#5a4632; white-space:pre-wrap; word-break:break-word;}
+  .chips{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;}
+  .chip{font-family:var(--body); font-weight:700; font-size:12px; padding:2px 9px; border-radius:999px;}
+  .chip.skill{background:var(--soft); color:var(--accent); border:1px solid var(--border);}
+  .chip.tool{background:#f1ece1; color:var(--ink-soft); border:1px solid #ded6c6;}
+  .doc{display:inline-block; margin-top:2px; font-family:var(--disp); font-weight:700; font-size:14px; color:var(--accent); text-decoration:none; border-bottom:2px dotted var(--accent);}
+  .doc:hover{background:var(--soft);}
+
+  .hero-done{background:#fff; border:3px solid #16a34a; border-radius:var(--wobble); padding:20px; text-align:center; margin-bottom:18px;}
+  .hero-done .t{font-family:var(--disp); font-weight:700; font-size:30px; color:#16a34a;}
+  .hero-done p{font-family:var(--disp); font-weight:500; font-size:18px; color:var(--ink-soft); margin:4px 0 0;}
+
+  .cert{background:#2a2722; border-radius:var(--wobble2); padding:16px 20px; color:#f4efe6; margin-bottom:14px;}
+  .cert .t{font-family:var(--disp); font-weight:700; font-size:21px; margin-bottom:8px;}
+  .cert .track{display:flex; align-items:center; flex-wrap:wrap; gap:8px; font-family:var(--disp); font-weight:600; font-size:16px;}
+  .pill{padding:4px 14px; border-radius:999px;}
+  .pill.opt{background:#4b463d;} .pill.opt small{color:#b3ac9e; font-size:12px;}
+  .pill.b{background:#1d4ed8;} .pill.g{background:#16a34a;}
+  .arrow{color:#8a8479;}
+  .cert .fine{font-family:var(--body); font-weight:600; font-size:12.5px; color:#b3ac9e; margin:10px 0 0; line-height:1.5;}
+  .menu-note{font-family:var(--disp); font-weight:500; font-size:15px; color:var(--faint); text-align:center; margin:0;}
+
+  #confetti{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:60;}
+  #confetti span{position:absolute; bottom:32%;}
+  @keyframes floatUp{0%{transform:translateY(0) rotate(0);opacity:0}12%{opacity:1}100%{transform:translateY(-270px) rotate(35deg);opacity:0}}
+
+  button:focus-visible,a:focus-visible{outline:3px solid #f0b429; outline-offset:2px;}
+  @media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important;} }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="head">
+      <h1>🗺️ DevOps Quest Map</h1>
+      <p>Zero → Hero, one tiny finishable quest at a time.</p>
+    </div>
+    <div id="board"></div>
+    <div class="cert">
+      <div class="t">🎓 Run this cert track in parallel</div>
+      <div class="track">
+        <span class="pill opt">AZ-900 <small>(optional)</small></span>
+        <span class="arrow">→</span>
+        <span class="pill b">AZ-104</span>
+        <span class="arrow">→</span>
+        <span class="pill g">AZ-400 · DevOps Engineer Expert</span>
+      </div>
+      <p class="fine">Heads-up: pass AZ-104 (or AZ-204) <i>before</i> AZ-400 — or within 1 year of it — or the Expert badge won't be granted. Your M365 / Entra / Intune / PowerShell background makes AZ-104 the natural prerequisite over the developer-focused AZ-204.</p>
+    </div>
+    <p class="menu-note">This is a menu, not a mandate 🍽️ — finishing a coherent subset across the tiers beats half-starting everything.</p>
+  </div>
+  <div id="confetti"></div>
+
+<script>
+const TIERS = [
+  { n:1, dot:"🟢", label:"TIER 1 · Spark", vibe:"Same-day wins. Prove to your brain this is fun AND finishable." },
+  { n:2, dot:"🔵", label:"TIER 2 · Foundation", vibe:"Get comfy on the Linux CLI, Docker Compose & Git." },
+  { n:3, dot:"🟡", label:"TIER 3 · Real Tooling", vibe:"Cross from hobbyist into genuinely employable DevOps skills." },
+  { n:4, dot:"🟠", label:"TIER 4 · Orchestration", vibe:"Kubernetes + real Infrastructure-as-Code." },
+  { n:5, dot:"🔴", label:"TIER 5 · Hero", vibe:"Tie it all into a production-grade platform + portfolio." },
+];
+
+const QUESTS = [
+  { id:"pihole", tier:1, emoji:"🛡️", name:"Pi-hole", what:"Network-wide ad blocker — ads vanish on every device.", time:"~30–60 min",
+    win:"Instant, household-visible payoff with near-zero upkeep. The classic 'gateway drug' to self-hosting.",
+    prep:[
+      "A spare machine: a Raspberry Pi (3/4/5 or Zero 2 W), an old laptop/mini-PC, or a VM/LXC on a box you already own. 1 GB RAM is plenty.",
+      "If using a Pi: a microSD card (8 GB+) and the Raspberry Pi Imager app on your computer.",
+      "Admin login to your home router (you'll change its DNS setting).",
+      "Decide on a fixed IP for this machine so its address never changes."],
+    steps:[
+      "Flash the OS: in Raspberry Pi Imager pick 'Raspberry Pi OS Lite (64-bit)', and in the ⚙ settings enable SSH + set a username/password. (On a PC/VM instead, install Ubuntu or Debian.)",
+      "Boot it and connect from your computer: `ssh youruser@PI-IP`",
+      "Update everything first: `sudo apt update && sudo apt upgrade -y`",
+      "Give it a fixed IP — easiest is a DHCP reservation in your router for this machine's MAC address.",
+      "Run the official installer and follow the prompts (pick an upstream resolver like Cloudflare or Quad9, accept defaults): `curl -sSL https://install.pi-hole.net | bash`",
+      "At the end it prints your admin password — copy it. (Change it later with `pihole setpassword`.)",
+      "Open the dashboard at `http://PI-IP/admin` and log in.",
+      "Point your whole network at it: in your router's DHCP/DNS settings, set the DNS server to the Pi-hole's IP, then reconnect a device. (To test first, change just one phone's DNS.)"],
+    doneWhen:"Your dashboard's 'Total queries' and 'Queries blocked' counters climb as you browse, and ads visibly disappear.",
+    skills:["DNS","static IP / DHCP","Linux basics"], tools:["Raspberry Pi or VM","Pi-hole"],
+    docs:{label:"docs.pi-hole.net", url:"https://docs.pi-hole.net"} },
+
+  { id:"portainer", tier:1, emoji:"🐳", name:"Portainer", what:"Click-to-manage Docker — no CLI memorizing yet.", time:"~30 min",
+    win:"Makes the abstract idea of 'containers' concrete and clickable.",
+    prep:[
+      "A Linux host with Docker installed. No Docker yet? Install it: `curl -fsSL https://get.docker.com | sh` then `sudo usermod -aG docker $USER` and log out/in.",
+      "Be able to reach the host's IP on port 9443 from your browser."],
+    steps:[
+      "Create a volume so Portainer keeps its data: `docker volume create portainer_data`",
+      "Start it: `docker run -d -p 8000:8000 -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:lts`",
+      "Confirm it's up: `docker ps` (look for the 'portainer' container).",
+      "Open `https://HOST-IP:9443` and accept the self-signed-cert warning (it's your own box).",
+      "Create your admin user + a password of at least 12 characters, then choose to manage the 'local' Docker environment.",
+      "Click into Containers — your Pi-hole and anything else now has Start/Stop/Logs buttons."],
+    doneWhen:"You can stop, start, and read the logs of a container from the web UI without touching the command line.",
+    skills:["Docker concepts","container lifecycle","ports"], tools:["Docker","Portainer"],
+    docs:{label:"docs.portainer.io", url:"https://docs.portainer.io"} },
+
+  { id:"uptimekuma", tier:1, emoji:"📈", name:"Uptime Kuma", what:"A pretty green/red dashboard that pings your stuff.", time:"~30 min",
+    win:"Beautiful dashboard = instant visual feedback. Each new monitor is its own tiny win.",
+    prep:[
+      "A Linux host with Docker (see the Portainer card if you still need Docker).",
+      "A folder for its data: `mkdir -p ~/uptime-kuma`"],
+    steps:[
+      "Run it (one command): `docker run -d --restart=always -p 3001:3001 -v ~/uptime-kuma:/app/data --name uptime-kuma louislam/uptime-kuma:1`",
+      "Open `http://HOST-IP:3001` and create your admin account on first load.",
+      "Click 'Add New Monitor'. Make an 'HTTP(s)' monitor pointed at your Pi-hole admin URL, and a 'Ping' monitor to your router IP.",
+      "Set the check interval (e.g. 60s) and save — the tile turns green when the target is up.",
+      "(Optional) Add a notification (Telegram / Discord / email) under Settings → Notifications so outages ping you."],
+    doneWhen:"You have at least two green monitors and refreshing the page shows live up/down status.",
+    skills:["monitoring basics","HTTP / TCP / ping checks","alerting"], tools:["Docker","Uptime Kuma"],
+    docs:{label:"github.com/louislam/uptime-kuma", url:"https://github.com/louislam/uptime-kuma"} },
+
+  { id:"jellyfin", tier:2, emoji:"🎬", name:"Jellyfin / Plex", what:"Your own private Netflix on every screen.", time:"2–3 short sessions",
+    win:"'Files on disk → streaming on your couch' is a fast, satisfying transformation.",
+    prep:[
+      "A host with Docker + Docker Compose. Check: `docker compose version`",
+      "A folder of media and a folder for config — note both full paths.",
+      "Find your user IDs for permissions: run `id` and note the uid and gid numbers."],
+    steps:[
+      "Make a project folder: `mkdir -p ~/jellyfin && cd ~/jellyfin`",
+      "Create a `docker-compose.yml` from Jellyfin's docs template: map port 8096, a `/config` volume, and your media folder to `/media`, and set PUID/PGID to your `id` numbers.",
+      "Start it: `docker compose up -d`",
+      "Open `http://HOST-IP:8096` and walk the wizard: create a user, add a library pointing at `/media`.",
+      "Let it scan; name files like `Movie Name (2021).mkv` so metadata matches cleanly.",
+      "Install a Jellyfin app on your phone/TV and stream over your network."],
+    doneWhen:"A show plays end-to-end on a different device (phone or TV) served from your own box.",
+    skills:["Docker Compose","volumes / mounts","file permissions"], tools:["Docker Compose","Jellyfin"],
+    docs:{label:"jellyfin.org/docs", url:"https://jellyfin.org/docs/"} },
+
+  { id:"nextcloud", tier:2, emoji:"☁️", name:"Nextcloud + Vaultwarden", what:"Self-hosted Drive + a password vault.", time:"~1 hr each",
+    win:"Replaces services you already pay for. Each app is its own finishable mini-quest.",
+    prep:[
+      "A host with Docker + Docker Compose and some free disk space.",
+      "Decide where data lives (a folder you'll back up).",
+      "You'll want HTTPS for passwords — best paired with the Nginx Proxy Manager quest."],
+    steps:[
+      "Nextcloud: the maintainers recommend 'Nextcloud All-in-One' — follow its official quick-start to run the AIO master container, open its setup port, and let it deploy the rest.",
+      "In the Nextcloud web UI, create your admin account and add the Files / Calendar / Photos apps you want.",
+      "Vaultwarden (a light Bitwarden-compatible server): `docker run -d --name vaultwarden --restart=always -v ~/vw-data:/data -p 8088:80 vaultwarden/server:latest`",
+      "Open it, create your account, install the Bitwarden browser extension / app, and point it at your server URL.",
+      "Important: put both behind HTTPS (next quest) before storing real data — browsers require a secure context for password autofill."],
+    doneWhen:"You upload a file on one device and see it on another, and you can save + autofill a login through Bitwarden against your own Vaultwarden.",
+    skills:["persistent storage","database containers","backups"], tools:["Docker Compose","Nextcloud","Vaultwarden"],
+    docs:{label:"github.com/nextcloud/all-in-one", url:"https://github.com/nextcloud/all-in-one"} },
+
+  { id:"git", tier:2, emoji:"🌿", name:"Git + GitHub", what:"Version-control every config file & script you own.", time:"2 sessions",
+    win:"Turns 'my configs' into a recoverable portfolio. A daily-required DevOps skill.",
+    prep:[
+      "Git installed: `git --version` (install with `sudo apt install git` or from git-scm.com).",
+      "A free GitHub account, with an SSH key added (GitHub's docs walk you through `ssh-keygen` then adding the public key).",
+      "A folder that already has files worth tracking — e.g. your Docker Compose files."],
+    steps:[
+      "Set your identity once: `git config --global user.name 'Your Name'` then `git config --global user.email 'you@example.com'`",
+      "In your folder: `git init`",
+      "Stage and commit: `git add .` then `git commit -m 'First commit: my homelab configs'`",
+      "On GitHub, click New → create an empty repo (no README), and copy its SSH URL.",
+      "Link and push: `git remote add origin git@github.com:you/repo.git` then `git branch -M main` then `git push -u origin main`",
+      "Practice the loop: edit a file, then `git add .`, `git commit -m '...'`, `git push`.",
+      "Branch + pull request: `git checkout -b test-change`, commit something, push it, then open a PR on GitHub and merge it."],
+    doneWhen:"Your configs are visible in your GitHub repo and you've opened and merged at least one pull request.",
+    skills:["Git: branch / merge / PR","GitHub","single source of truth"], tools:["Git","GitHub"],
+    docs:{label:"docs.github.com (get started)", url:"https://docs.github.com/en/get-started"} },
+
+  { id:"npm", tier:2, emoji:"🔒", name:"Nginx Proxy Manager", what:"Real hostnames + the HTTPS padlock for your services.", time:"2 sessions",
+    win:"The moment https://jelly.yourdomain works with a padlock feels properly pro.",
+    prep:[
+      "A host with Docker + Compose.",
+      "A domain name (even a cheap one) with DNS pointed at your network — or a free DuckDNS subdomain for testing.",
+      "Router ports 80 and 443 forwarded to this host if you want certificates from the internet."],
+    steps:[
+      "Make a folder and a `docker-compose.yml` using the `jc21/nginx-proxy-manager:latest` image, exposing ports 80, 81 (admin) and 443, with `data` and `letsencrypt` volumes (template in NPM's docs).",
+      "Start it: `docker compose up -d`",
+      "Open the admin UI at `http://HOST-IP:81`. Default login is `admin@example.com` / `changeme` — it forces you to change both immediately.",
+      "Add a Proxy Host: hostname `jelly.yourdomain.com`, forwarding to your Jellyfin host IP + port 8096.",
+      "On the SSL tab, request a new Let's Encrypt certificate and tick 'Force SSL'.",
+      "Visit `https://jelly.yourdomain.com` — it should load Jellyfin with a valid padlock."],
+    doneWhen:"At least one service opens via a real https:// hostname with a trusted padlock — no port number needed.",
+    skills:["reverse proxy","TLS / SSL certs","DNS records"], tools:["Nginx Proxy Manager","Let's Encrypt"],
+    docs:{label:"nginxproxymanager.com", url:"https://nginxproxymanager.com/guide/"} },
+
+  { id:"proxmox", tier:3, emoji:"🖥️", name:"Proxmox", what:"Turn one old PC into many VMs — with snapshots.", time:"3 sessions",
+    win:"Snapshots are a fearless rollback button — 'break it, click undo' kills the fear of starting.",
+    prep:[
+      "A dedicated machine (Proxmox takes over the whole disk) with virtualization enabled in BIOS (VT-x / AMD-V). 8 GB+ RAM recommended.",
+      "A USB stick (4 GB+) and a flashing tool (balenaEtcher, Rufus, or Ventoy).",
+      "The Proxmox VE ISO from proxmox.com, plus an Ubuntu Server ISO for your first VM."],
+    steps:[
+      "Flash the Proxmox VE ISO to USB, boot the target machine from it, and run the installer (pick the disk, set a strong root password + your email).",
+      "After reboot, from another computer open `https://PROXMOX-IP:8006` (accept the self-signed cert; log in as root).",
+      "Upload the Ubuntu ISO: Datacenter → your node → local → ISO Images → Upload.",
+      "Create a VM: click 'Create VM', attach the Ubuntu ISO, give it 2 CPU / 2–4 GB RAM / 20 GB disk, and start it.",
+      "Open the VM Console, install Ubuntu, then take a Snapshot from the VM's Snapshots tab — your safe 'undo' point.",
+      "(Optional) Convert the installed VM into a Template so future VMs are one click."],
+    doneWhen:"You can boot an Ubuntu VM from the web UI, take a snapshot, change something, and roll back to it.",
+    skills:["virtualization","VM / LXC lifecycle","bridges / VLANs"], tools:["Proxmox VE","Ubuntu Server"],
+    docs:{label:"pve.proxmox.com/pve-docs", url:"https://pve.proxmox.com/pve-docs/"} },
+
+  { id:"homeassistant", tier:3, emoji:"💡", name:"Home Assistant", what:"Motion-activated lights & other automations.", time:"30–60 min each",
+    win:"Teaches the universal automation pattern (trigger → condition → action) with instant feedback.",
+    prep:[
+      "A Raspberry Pi (4/5 best) + SD/SSD, OR a VM on Proxmox. The 'HAOS' image is the easiest route.",
+      "Raspberry Pi Imager (HAOS is in its OS list under 'Other specific-purpose OS').",
+      "Be on the same network as the device."],
+    steps:[
+      "Flash 'Home Assistant OS' with Raspberry Pi Imager, then boot the device (wired ethernet is easiest for first setup).",
+      "Wait ~10–20 min, then open `http://homeassistant.local:8123` (or the device IP:8123) and create your admin account.",
+      "Let it auto-discover devices; add an integration for something you own — or just use the built-in 'Sun' integration to start.",
+      "Build your first automation: Settings → Automations → Create. Trigger = a motion sensor (or a time); Condition = (optional) after sunset; Action = turn a light on.",
+      "Save it, then trigger the condition and watch the light react."],
+    doneWhen:"One automation runs on its own — a light turns on from motion or at a set time — with no button press.",
+    skills:["YAML","event-driven logic","integrations"], tools:["Home Assistant","YAML"],
+    docs:{label:"home-assistant.io", url:"https://www.home-assistant.io/getting-started/"} },
+
+  { id:"grafana", tier:3, emoji:"📊", name:"Prometheus + Grafana", what:"Gorgeous, production-grade dashboards for your lab.", time:"3 sessions",
+    win:"Grafana dashboards are pure visual dopamine. Start with four panels you actually understand.",
+    prep:[
+      "A host with Docker + Compose.",
+      "Decide what to monitor first — the host itself is perfect (via 'node_exporter')."],
+    steps:[
+      "Make a folder with a `docker-compose.yml` running three services: `prom/prometheus`, `grafana/grafana`, and `prom/node-exporter` (template in the docs below).",
+      "Add a `prometheus.yml` telling Prometheus to scrape node_exporter at `node-exporter:9100`.",
+      "Start the stack: `docker compose up -d`",
+      "Open Grafana at `http://HOST-IP:3000` (first login `admin` / `admin`, then set a new password).",
+      "Add a data source: Connections → Data sources → Prometheus → URL `http://prometheus:9090` → Save & test.",
+      "Import a ready-made dashboard: Dashboards → Import → enter ID `1860` ('Node Exporter Full') → pick your Prometheus source.",
+      "Add 1–2 alert rules that matter to you (e.g. disk > 90%, or host down)."],
+    doneWhen:"A Grafana dashboard shows live CPU / RAM / disk for your host and you can explain at least four panels.",
+    skills:["time-series metrics","exporters","PromQL basics","alerting"], tools:["Prometheus","Grafana","Node Exporter"],
+    docs:{label:"grafana.com (getting started)", url:"https://grafana.com/docs/grafana/latest/getting-started/"} },
+
+  { id:"ghactions", tier:3, emoji:"🤖", name:"GitHub Actions CI/CD", what:"Push code → it builds, tests & deploys itself.", time:"3 sessions",
+    win:"'Change → git push → live automatically' is a tight, addictive loop. The green check is the reward.",
+    prep:[
+      "A GitHub repo (reuse your configs repo, or a tiny app — even a one-page site or small script).",
+      "Basic Git comfort from the Git quest.",
+      "(Optional) A Docker Hub or GitHub Container Registry account if you'll push an image."],
+    steps:[
+      "Add a trivial app + a `Dockerfile` to the repo (or skip the image and just run a test command).",
+      "Create the folder `.github/workflows/` and add a file `ci.yml`.",
+      "In it set `on: [push]`, one job with `runs-on: ubuntu-latest`, and steps: `actions/checkout@v4` then your build/test command.",
+      "Commit and push — open the repo's 'Actions' tab and watch the run go green.",
+      "Add a test step that fails on purpose, push, watch it go red, then fix it — that red→green loop is the whole point.",
+      "(Next level) Add a step that builds + pushes your Docker image, using a repository Secret for the registry password (Settings → Secrets and variables → Actions)."],
+    doneWhen:"Every git push triggers a workflow that builds/tests your project, and you can read the logs to see why it passed or failed.",
+    skills:["CI/CD concepts","workflows","build / test / deploy","secrets"], tools:["GitHub Actions","Docker"],
+    docs:{label:"docs.github.com/actions", url:"https://docs.github.com/en/actions"} },
+
+  { id:"cloudresume", tier:3, emoji:"🏆", name:"Cloud Resume Challenge (Azure)", what:"A defined 16-step project ending in a live public URL.", time:"~6 weeks · weekly chunks",
+    win:"A challenge WITH a checklist and a public URL = built-in gamification + a real portfolio piece.",
+    prep:[
+      "A free Azure account (free tier / student credit). Set a billing alert immediately.",
+      "The official challenge guide open in a tab — it lists all 16 steps in order.",
+      "Comfort with Git + GitHub Actions from earlier quests (you'll reuse both)."],
+    steps:[
+      "Read the Azure step list end-to-end first so you know where it's going.",
+      "Build a simple HTML/CSS resume and host it as a static website on Azure Blob Storage.",
+      "Put Azure CDN (or Front Door) in front with HTTPS and your own domain.",
+      "Add a visitor counter: JavaScript → an Azure Function (HTTP trigger) → a Cosmos DB item storing the count.",
+      "Define the Azure resources as code with Terraform (or Bicep) instead of clicking in the portal.",
+      "Wire two GitHub Actions pipelines: one deploys the front-end on push, one tests + deploys the Function.",
+      "Write a short blog post on what you learned (the challenge asks for it — great for interviews)."],
+    doneWhen:"Your resume is live at your own HTTPS domain, the visitor counter increments each load, and a git push redeploys it automatically.",
+    skills:["cloud storage","CDN","serverless","NoSQL","IAM","IaC","CI/CD"], tools:["Azure (Blob, CDN, Functions, Cosmos DB)","Terraform","GitHub Actions"],
+    docs:{label:"cloudresumechallenge.dev (Azure)", url:"https://cloudresumechallenge.dev/docs/the-challenge/azure/"} },
+
+  { id:"terraform", tier:4, emoji:"🧱", name:"Terraform + Ansible", what:"One command → a fully provisioned, configured VM.", time:"Incremental",
+    win:"Idempotent re-runs give instant confirmation — and this maps straight from your PowerShell DSC / Intune config work.",
+    prep:[
+      "A working Proxmox host with an Ubuntu cloud-init template ready.",
+      "Terraform and Ansible on your workstation: `terraform -version`, `ansible --version`.",
+      "A Proxmox API token for Terraform (Datacenter → Permissions → API Tokens)."],
+    steps:[
+      "Terraform: make a folder with a `main.tf` using a Proxmox provider; define one VM resource cloned from your template.",
+      "Run `terraform init`, then `terraform plan` (read the preview!), then `terraform apply` — watch a VM appear in Proxmox.",
+      "Change the VM's RAM in the .tf file and `terraform apply` again — it updates, not recreates. That's declarative IaC.",
+      "Ansible: write an `inventory` file with the new VM's IP and a `playbook.yml` with a few roles (install Docker, create a user, apply updates).",
+      "Run `ansible-playbook -i inventory playbook.yml`; run it again and watch it report 'ok' (idempotency).",
+      "Commit both the Terraform and Ansible code to Git."],
+    doneWhen:"One `terraform apply` builds a VM and one `ansible-playbook` run fully configures it — and re-running either changes nothing it's already done.",
+    skills:["declarative IaC","Terraform state","Ansible roles"], tools:["Terraform","Ansible","Proxmox provider"],
+    docs:{label:"developer.hashicorp.com/terraform", url:"https://developer.hashicorp.com/terraform/tutorials"} },
+
+  { id:"k3s", tier:4, emoji:"☸️", name:"k3s / MicroK8s", what:"Your own lightweight but real Kubernetes cluster.", time:"3 sessions, then iterate",
+    win:"Start with one node, deploy one app — the 'pods running!' moment — then expand.",
+    prep:[
+      "A Linux VM (2 CPU / 2 GB RAM minimum) — a Proxmox Ubuntu VM is ideal.",
+      "SSH access to it; basic comfort editing YAML."],
+    steps:[
+      "Install k3s (single command): `curl -sfL https://get.k3s.io | sh -`",
+      "Check the node is Ready: `sudo k3s kubectl get node`",
+      "Make kubectl usable without sudo: `mkdir -p ~/.kube && sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config && sudo chown $(id -u):$(id -g) ~/.kube/config`",
+      "Deploy your first app: `kubectl create deployment web --image=nginx` then `kubectl expose deployment web --port=80 --type=NodePort`",
+      "See it run: `kubectl get pods` and `kubectl get svc` (note the NodePort), then browse `http://VM-IP:NODEPORT`.",
+      "Scale it: `kubectl scale deployment web --replicas=3` and watch `kubectl get pods` show three.",
+      "Then learn the primitives one at a time: namespaces → Ingress (k3s ships Traefik) → Helm."],
+    doneWhen:"You can deploy, expose, scale, and delete an app with kubectl and explain what a pod, deployment, and service are.",
+    skills:["K8s primitives","kubectl","Helm","volumes"], tools:["k3s / MicroK8s","kubectl","Helm"],
+    docs:{label:"docs.k3s.io", url:"https://docs.k3s.io/"} },
+
+  { id:"argocd", tier:4, emoji:"🔁", name:"Argo CD (GitOps)", what:"Commit to Git → the cluster auto-syncs to match.", time:"Incremental",
+    win:"A visual 'in sync' dashboard (green = good). Deploying an app becomes a commit.",
+    prep:[
+      "A running k3s / MicroK8s cluster (previous quest) with kubectl working.",
+      "A GitHub repo to hold your Kubernetes manifests (this becomes your 'source of truth')."],
+    steps:[
+      "Create the namespace: `kubectl create namespace argocd`",
+      "Install Argo CD: `kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml`",
+      "Wait for pods: `kubectl get pods -n argocd` (all Running).",
+      "Reach the UI: `kubectl port-forward svc/argocd-server -n argocd 8080:443`, then open `https://localhost:8080`.",
+      "Get the initial admin password from the secret `argocd-initial-admin-secret` (the docs show the exact command) and log in as admin.",
+      "Put a simple app's manifests (an nginx Deployment + Service) in your Git repo, then in Argo CD create an Application pointing at that repo/path with auto-sync on.",
+      "Change the manifest in Git, commit, push — watch Argo CD detect 'OutOfSync' and reconcile automatically."],
+    doneWhen:"A git push to your manifests repo updates what's running in the cluster on its own, and Argo CD shows the app 'Synced' and 'Healthy'.",
+    skills:["GitOps","declarative deploys","Kustomize / Helm","Sealed Secrets"], tools:["Argo CD","Git","k3s"],
+    docs:{label:"argo-cd.readthedocs.io", url:"https://argo-cd.readthedocs.io/en/stable/getting_started/"} },
+
+  { id:"homelabcode", tier:5, emoji:"🏗️", name:"Homelab-as-Code", what:"Rebuild your entire lab from scratch with one command.", time:"Big build",
+    win:"The ultimate 'it all just works' — and because it's code, it's resumable by design.",
+    prep:[
+      "Working Proxmox + Terraform + Ansible from earlier quests.",
+      "Packer on your workstation: `packer version`.",
+      "A Git repo to hold all of it."],
+    steps:[
+      "Packer: write a template that builds a clean, updated Ubuntu template on Proxmox automatically (no manual ISO clicking).",
+      "Terraform: define your whole set of VMs (cluster nodes, services) as code that clones the Packer template.",
+      "Ansible: write playbooks/roles that configure every VM's software and settings.",
+      "Stitch them: a top-level script or Makefile that runs Packer → Terraform → Ansible in order.",
+      "Prove it: destroy a VM (or all of them) and rebuild from scratch with your pipeline.",
+      "Keep everything in Git; store secrets out of the repo (a vault or encrypted file)."],
+    doneWhen:"You can wipe and rebuild your lab from the Git repo with essentially one command — nothing critical lives only 'in your head' or clicked in by hand.",
+    skills:["image building (Packer)","end-to-end IaC","immutable infra","disaster recovery"], tools:["Packer","Terraform","Ansible","Git"],
+    docs:{label:"developer.hashicorp.com/packer", url:"https://developer.hashicorp.com/packer/tutorials"} },
+
+  { id:"pipeline", tier:5, emoji:"🚀", name:"End-to-End Pipeline", what:"Git → CI → Kubernetes → monitored → secured. The capstone.", time:"Big build",
+    win:"Your 'boss fight' and portfolio centerpiece — assembled from pieces you already built.",
+    prep:[
+      "All earlier pieces working: a Git repo, GitHub Actions, a Kubernetes cluster, Argo CD, and Prometheus/Grafana.",
+      "A small but real app (front-end + an API, or a single service) to push through the whole flow."],
+    steps:[
+      "Containerize the app with a `Dockerfile`; store the code in GitHub.",
+      "CI (GitHub Actions): on push, build the image, run tests, scan it for vulnerabilities (e.g. Trivy), and push it to a registry.",
+      "CD (GitOps): update the image tag in your manifests repo; Argo CD deploys the new version to Kubernetes automatically.",
+      "Observability: expose app metrics, scrape them with Prometheus, and build a Grafana dashboard + a couple of alerts.",
+      "Add a touch of DevSecOps: fail the pipeline if the image scan finds a critical vulnerability.",
+      "Write a README with an architecture diagram — this is the project you'll demo in interviews."],
+    doneWhen:"A single git push flows automatically: build → test → scan → deploy to Kubernetes → visible on your dashboard, with no manual steps.",
+    skills:["full software lifecycle","observability","DevSecOps (image scanning)"], tools:["GitHub Actions","Docker","Kubernetes","Argo CD","Grafana","Trivy"],
+    docs:{label:"roadmap.sh/devops", url:"https://roadmap.sh/devops"} },
+
+  { id:"intunecode", tier:5, emoji:"🪟", name:"Intune / Entra Config-as-Code", what:"Your M365 skills, DevOps-ified (dev → prod tenant).", time:"Big build",
+    win:"Skills you ALREADY have, in a brand-new and uniquely marketable frame. High confidence, fast progress.",
+    prep:[
+      "Your M365 access — ideally a separate dev/test tenant (Microsoft offers free developer tenants to practice in safely).",
+      "Microsoft Graph PowerShell SDK installed, and/or a community tool like 'IntuneManagement', plus Git.",
+      "Azure DevOps or GitHub for the pipeline."],
+    steps:[
+      "Export your current Intune and/or Conditional Access policies to JSON (Graph PowerShell, or the IntuneManagement tool's export).",
+      "Commit those JSON files to a Git repo — now your config has history and review.",
+      "Build a pipeline (Azure DevOps or GitHub Actions) that applies the JSON back to a tenant via Graph, authenticating with a service principal.",
+      "Store the service principal secret in Azure Key Vault / pipeline secrets — never in the repo.",
+      "Make a change in a DEV tenant via a pull request; on merge, the pipeline promotes it to PROD.",
+      "Explore Microsoft365DSC if you want full 'desired state' management across the tenant."],
+    doneWhen:"A reviewed change in Git automatically deploys a policy to your tenant through a pipeline, with secrets kept in a vault — your sysadmin work, now true DevOps.",
+    skills:["config-as-code","Graph / PowerShell","CI/CD secrets","identity-as-code"], tools:["Azure DevOps / GH Actions","Graph PowerShell","Microsoft365DSC","Key Vault"],
+    docs:{label:"Microsoft Learn: Intune", url:"https://learn.microsoft.com/en-us/mem/intune/"} },
+];
+
+const LEVELS = [
+  { min:0,  title:"Curious Novice", emoji:"🌱" },
+  { min:1,  title:"Apprentice",     emoji:"🔧" },
+  { min:4,  title:"Tinkerer",       emoji:"🛠️" },
+  { min:8,  title:"Operator",       emoji:"⚙️" },
+  { min:12, title:"Engineer",       emoji:"🚀" },
+  { min:16, title:"Architect",      emoji:"🏗️" },
+  { min:18, title:"DevOps Hero",    emoji:"🏆" },
+];
+
+const KEY = "devops-quest-map-v1";
+const TOTAL = QUESTS.length;
+let state = { done:{}, active:null, open:{}, muted:false };
+
+try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s){ state = Object.assign(state, s); state.open = state.open || {}; } }catch(e){}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+
+const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const fmt = s => esc(s).replace(/`([^`]+)`/g, '<code class="cmd">$1</code>');
+
+/* ---------- SOUND (Web Audio, synthesized — no files needed) ---------- */
+let audioCtx=null, masterGain=null;
+function ensureAudio(){
+  try{
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.22;            // gentle by design
+      masterGain.connect(audioCtx.destination);
+    }
+    if(audioCtx.state==="suspended") audioCtx.resume();
+  }catch(e){}
+}
+function tone(freq,startT,dur,type,vol){
+  if(!audioCtx||!masterGain) return;
+  const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+  o.type=type||"sine"; o.frequency.value=freq;
+  const t0=audioCtx.currentTime+startT;
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.linearRampToValueAtTime(vol,t0+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  o.connect(g); g.connect(masterGain);
+  o.start(t0); o.stop(t0+dur+0.03);
+}
+function playComplete(){ if(state.muted) return; ensureAudio(); tone(659.25,0,0.13,"triangle",0.9); tone(987.77,0.075,0.17,"triangle",0.8); }
+function playUncheck(){ if(state.muted) return; ensureAudio(); tone(392,0,0.12,"sine",0.6); tone(294,0.07,0.14,"sine",0.5); }
+function playTick(){ if(state.muted) return; ensureAudio(); tone(1174.7,0,0.05,"triangle",0.4); }
+function playTier(){ if(state.muted) return; ensureAudio(); [523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(f,i*0.09,0.28,"triangle",0.85)); }
+function playHero(){ if(state.muted) return; ensureAudio();
+  [523.25,659.25,783.99].forEach((f,i)=>tone(f,i*0.08,0.2,"triangle",0.85));
+  [659.25,783.99,987.77].forEach((f,i)=>tone(f,0.28+i*0.08,0.2,"triangle",0.85));
+  [523.25,659.25,783.99,1046.5].forEach(f=>tone(f,0.6,0.7,"triangle",0.7));
+}
+function buzz(p){ if(!state.muted && navigator.vibrate){ try{ navigator.vibrate(p); }catch(e){} } }
+
+function tierStats(n){
+  const qs = QUESTS.filter(q=>q.tier===n);
+  const d = qs.filter(q=>state.done[q.id]).length;
+  return { d, total:qs.length, cleared: d===qs.length && qs.length>0 };
+}
+function doneCount(){ return QUESTS.filter(q=>state.done[q.id]).length; }
+function levelFor(c){ let r=LEVELS[0]; for(const l of LEVELS){ if(c>=l.min) r=l; } return r; }
+function nextLevel(c){ return LEVELS.find(l=>l.min>c) || null; }
+
+function cardHTML(q){
+  const done = !!state.done[q.id], active = state.active===q.id, open = !!state.open[q.id];
+  const panel = open ? `
+    <div class="panel">
+      <h4>🎒 Before you start</h4>
+      <ul class="prep">${q.prep.map(x=>`<li>${fmt(x)}</li>`).join("")}</ul>
+      <h4>🪜 Step-by-step</h4>
+      <div class="sub">each step ≈ one short sitting</div>
+      <ol class="steps">${q.steps.map(x=>`<li>${fmt(x)}</li>`).join("")}</ol>
+      <div class="done-box"><span class="lab">✅ You're done when </span><span class="txt">${fmt(q.doneWhen)}</span></div>
+      <h4>✨ Why it's an ADHD win</h4>
+      <p>${fmt(q.win)}</p>
+      <h4>🧠 Skills you'll gain</h4>
+      <div class="chips">${q.skills.map(s=>`<span class="chip skill">${esc(s)}</span>`).join("")}</div>
+      <h4>🧰 Tools</h4>
+      <div class="chips">${q.tools.map(t=>`<span class="chip tool">${esc(t)}</span>`).join("")}</div>
+      <a class="doc" href="${q.docs.url}" target="_blank" rel="noopener">📖 Official guide: ${esc(q.docs.label)} ↗</a>
+    </div>` : "";
+  return `
+  <div class="card${done?" done":""}${active?" active":""}${open?" open":""}">
+    <div class="card-top">
+      <span class="card-emoji">${q.emoji}</span>
+      <div style="flex:1;min-width:0;">
+        <div class="card-name">${esc(q.name)}</div>
+        <div class="card-time">⏱ ${esc(q.time)}</div>
+      </div>
+      <button class="circle" data-action="toggle" data-id="${q.id}" aria-pressed="${done}" aria-label="${done?"Mark incomplete":"Mark complete"}">${done?"✓":""}</button>
+    </div>
+    <p class="card-what">${fmt(q.what)}</p>
+    <div class="card-btns">
+      <button class="btn focus${active?" on":""}" data-action="focus" data-id="${q.id}">⚡ ${active?"My focus":"Set focus"}</button>
+      <button class="btn" data-action="open" data-id="${q.id}">${open?"Hide steps":"Steps & details"} <span class="chev">▾</span></button>
+    </div>
+    ${panel}
+  </div>`;
+}
+
+function render(){
+  const c = doneCount(), pct = Math.round(c/TOTAL*100), lvl = levelFor(c), nxt = nextLevel(c);
+  const aq = QUESTS.find(q=>q.id===state.active);
+
+  const badges = TIERS.map(t=>{
+    const s = tierStats(t.n);
+    return `<span class="badge${s.cleared?" on":""}" style="--ba:var(--tier${t.n}-a);--bs:var(--tier${t.n}-s);--bc:var(--tier${t.n}-b);">${s.cleared?"🏅 ":""}${t.dot} ${s.d}/${s.total}</span>`;
+  }).join("");
+
+  const tiers = TIERS.map(t=>{
+    const s = tierStats(t.n);
+    const cards = QUESTS.filter(q=>q.tier===t.n).map(cardHTML).join("");
+    return `
+    <section class="tier tier-${t.n}">
+      <div class="tier-head">
+        <div class="row"><h2>${t.dot} ${esc(t.label)}</h2><span class="frac">${s.d}/${s.total} done</span></div>
+        <p>${esc(t.vibe)}</p>
+        ${s.cleared?'<span class="stamp">CLEARED ✓</span>':""}
+      </div>
+      <div class="grid">${cards}</div>
+    </section>`;
+  }).join("");
+
+  const banner = aq
+    ? `<div class="focus-banner"><span class="z">⚡</span><span><b>Your focus right now: ${aq.emoji} ${esc(aq.name)}.</b> Finish this one before opening another tab in your brain.</span></div>`
+    : `<div class="hint">👉 Tap 'Steps & details' to open a quest's full playbook · tap the circle to complete · tap ⚡ to set your ONE focus · progress saves automatically.</div>`;
+
+  const allDone = c===TOTAL
+    ? `<div class="hero-done"><div class="t">🏆 DevOps Hero unlocked!</div><p>You finished all 18 quests. Go put that capstone pipeline at the top of your CV.</p></div>`
+    : "";
+
+  document.getElementById("board").innerHTML = `
+    <div class="xp">
+      <div class="xp-top">
+        <div class="xp-lvl">
+          <span class="xp-emoji">${lvl.emoji}</span>
+          <div><div class="xp-eyebrow">Current level</div><div class="xp-title">${lvl.title}</div></div>
+        </div>
+        <div class="xp-count"><div class="xp-num">${c}<span>/${TOTAL}</span></div><div class="xp-numlabel">quests cleared</div></div>
+      </div>
+      <div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div>
+      <div class="xp-foot">
+        <span class="xp-next">${nxt?`${nxt.min-c} more to become ${nxt.emoji} ${nxt.title}`:"🎉 Maxed out — you did the whole thing!"}</span>
+        <div class="ctrls">
+          <button class="reset" data-action="mute">${state.muted?"🔇 Sound off":"🔊 Sound on"}</button>
+          <button class="reset" data-action="reset">↺ Reset</button>
+        </div>
+      </div>
+      <div class="badges">${badges}</div>
+    </div>
+    ${banner}
+    ${tiers}
+    ${allDone}
+  `;
+}
+
+(function(){
+  const map = {1:["#16a34a","#e7f8ec","#4ade80"],2:["#2563eb","#e6effc","#60a5fa"],3:["#c2740a","#fdf3da","#f0b429"],4:["#ea580c","#ffeede","#fb923c"],5:["#dc2626","#fde9e9","#f87171"]};
+  const r = document.documentElement.style;
+  for(const k in map){ r.setProperty(`--tier${k}-a`,map[k][0]); r.setProperty(`--tier${k}-s`,map[k][1]); r.setProperty(`--tier${k}-b`,map[k][2]); }
+})();
+
+function celebrate(kind){
+  if(reduced) return;
+  const set = kind==="hero" ? ["🏆","🎉","🚀","⭐","🔥","🎊"] : ["✅","🎉","⭐","🔥"];
+  const n = kind==="hero" ? 26 : 16;
+  const box = document.getElementById("confetti");
+  for(let i=0;i<n;i++){
+    const s = document.createElement("span");
+    s.textContent = set[Math.floor(Math.random()*set.length)];
+    s.style.left = (5+Math.random()*90)+"%";
+    s.style.fontSize = (20+Math.random()*16)+"px";
+    s.style.animation = `floatUp 1.7s ease-out ${Math.random()*0.5}s forwards`;
+    box.appendChild(s);
+    setTimeout(()=>s.remove(), 2300);
+  }
+}
+
+document.getElementById("board").addEventListener("click", e=>{
+  const btn = e.target.closest("[data-action]"); if(!btn) return;
+  ensureAudio(); // unlock/resume audio on any tap (required by mobile browsers)
+  const action = btn.dataset.action, id = btn.dataset.id;
+
+  if(action==="mute"){
+    state.muted = !state.muted; save();
+    if(!state.muted){ ensureAudio(); playComplete(); }
+    render(); return;
+  }
+  if(action==="reset"){
+    if(confirm("Reset all quest progress? Your checkmarks and focus will be cleared.")){
+      const m = state.muted;
+      state = { done:{}, active:null, open:{}, muted:m }; save(); playUncheck(); render();
+    }
+    return;
+  }
+  if(action==="open"){ state.open[id] = !state.open[id]; save(); render(); return; }
+  if(action==="focus"){ state.active = (state.active===id) ? null : id; save(); playTick(); buzz(12); render(); return; }
+  if(action==="toggle"){
+    const q = QUESTS.find(x=>x.id===id);
+    const willComplete = !state.done[id];
+    state.done[id] = willComplete;
+    if(state.active===id && willComplete) state.active = null;
+    if(willComplete){
+      const qs = QUESTS.filter(x=>x.tier===q.tier);
+      const tierDone = qs.every(x=>state.done[x.id]);
+      if(doneCount()===TOTAL){ playHero(); buzz([0,40,30,40,30,40,90]); }
+      else if(tierDone){ playTier(); buzz([0,25,45,25,45,70]); }
+      else { playComplete(); buzz(28); }
+    } else {
+      playUncheck();
+    }
+    save(); render();
+  }
+});
+
+render();
+
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
+</script>
+</body>
+</html>

@@ -25,6 +25,7 @@
     --wobble2:18px 225px 18px 255px/225px 18px 255px 18px;
     --shadow:5px 6px 0 rgba(51,48,43,.12);
   }
+  .tier-0{--accent:#556070; --soft:#eceff3; --border:#9aa7b5;}
   .tier-1{--accent:#16a34a; --soft:#e7f8ec; --border:#4ade80;}
   .tier-2{--accent:#2563eb; --soft:#e6effc; --border:#60a5fa;}
   .tier-3{--accent:#c2740a; --soft:#fdf3da; --border:#f0b429;}
@@ -172,6 +173,7 @@
 
 <script>
 const TIERS = [
+  { n:0, dot:"🧱", label:"TIER 0 · Groundwork", vibe:"Turn the ThinkPad into your homelab base — do this once; everything else lives on top." },
   { n:1, dot:"🟢", label:"TIER 1 · Spark", vibe:"Same-day wins. Prove to your brain this is fun AND finishable." },
   { n:2, dot:"🔵", label:"TIER 2 · Foundation", vibe:"Get comfy on the Linux CLI, Docker Compose & Git." },
   { n:3, dot:"🟡", label:"TIER 3 · Real Tooling", vibe:"Cross from hobbyist into genuinely employable DevOps skills." },
@@ -180,6 +182,72 @@ const TIERS = [
 ];
 
 const QUESTS = [
+  { id:"proxmox-base", tier:0, emoji:"🏛️", name:"Install Proxmox VE", what:"Turn the P14s into a bare-metal hypervisor — your homelab's foundation.", time:"~1 hr",
+    win:"Do this once and every later quest has somewhere to live. It's basically ESXi for your laptop — which you already know from work.",
+    prep:[
+      "The P14s Gen 2 (AMD), a USB stick (4 GB+), and a second device to download from and reach the web UI.",
+      "In BIOS (tap Enter or F1 at boot), confirm AMD virtualization 'SVM Mode' is enabled — usually on by default.",
+      "Back up anything on the laptop first — Proxmox erases the whole NVMe.",
+      "Pick a fixed IP for it (set a DHCP reservation in your router by its MAC address)."],
+    steps:[
+      "Download the latest Proxmox VE 9.x ISO from proxmox.com and write it to the USB with balenaEtcher or Rufus.",
+      "Boot the ThinkPad from the USB (tap F12 for the boot menu) and choose 'Install Proxmox VE (graphical)'.",
+      "Accept the licence, pick the NVMe as the target disk, set country/timezone, a strong root password, and your email.",
+      "At the network step, give it the fixed IP you reserved, your gateway, and your router's IP as DNS for now.",
+      "Finish, remove the USB, let it reboot, then from another device open `https://LAPTOP-IP:8006` (accept the self-signed cert) and log in as root.",
+      "Dismiss the 'no valid subscription' popup — that's just the free repo, totally fine for home use."],
+    doneWhen:"You can log into the Proxmox web console at https://LAPTOP-IP:8006 from another device on your network.",
+    skills:["bare-metal hypervisor","disk & boot basics","BIOS virtualization"], tools:["Proxmox VE 9.2","ThinkPad P14s Gen 2","USB installer"],
+    docs:{label:"pve.proxmox.com (install)", url:"https://pve.proxmox.com/pve-docs/"} },
+
+  { id:"laptop-server", tier:0, emoji:"🔧", name:"Tame the laptop", what:"Stop it sleeping on lid-close and spare the battery, so it survives 24/7.", time:"~15 min",
+    win:"A fast, satisfying win that turns a laptop into a proper always-on server — with a built-in UPS.",
+    prep:[
+      "Proxmox installed and reachable (previous card).",
+      "Use the Shell in the Proxmox web UI: your node → Shell (no extra SSH setup needed)."],
+    steps:[
+      "Open the host Shell (Proxmox UI → your node → Shell).",
+      "Edit the logind config: `nano /etc/systemd/logind.conf`",
+      "Uncomment and set: `HandleLidSwitch=ignore`, `HandleLidSwitchExternalPower=ignore`, and `HandleLidSwitchDocked=ignore`.",
+      "Apply it: `systemctl restart systemd-logind` — closing the lid won't sleep it now.",
+      "Reboot into BIOS and set the battery charge threshold to about 80% (keeps the always-plugged battery healthy; it also acts as a UPS for power blips).",
+      "Close the lid and tuck the laptop somewhere with decent airflow."],
+    doneWhen:"You can close the lid and the Proxmox web UI stays reachable — it no longer goes to sleep.",
+    skills:["systemd / logind","Linux config files","power management"], tools:["Proxmox Shell","Lenovo BIOS"],
+    docs:{label:"systemd logind.conf", url:"https://www.freedesktop.org/software/systemd/man/logind.conf.html"} },
+
+  { id:"docker-host", tier:0, emoji:"🐧", name:"First Ubuntu Docker-host VM", what:"Create the one VM where Pi-hole, Jellyfin, Nextcloud & friends will live.", time:"~45 min",
+    win:"A clean, snapshot-able home for all your Tier 1–2 container projects — break it freely, roll back in a click.",
+    prep:[
+      "Working Proxmox (cards above).",
+      "Starter resources: ~2 vCPU, 4 GB RAM, 32 GB disk (bump RAM later once you add the 32 GB stick)."],
+    steps:[
+      "Download an Ubuntu Server 26.04 LTS ISO, then in Proxmox upload it: your node → local → ISO Images → Upload.",
+      "Click 'Create VM': name it docker-host, attach the Ubuntu ISO, give it 2 cores / 4096 MB RAM / 32 GB disk, and start it.",
+      "Open the VM Console and install Ubuntu Server (turn on OpenSSH when asked; create your user).",
+      "SSH in and update: `sudo apt update && sudo apt upgrade -y`",
+      "Install Docker: `curl -fsSL https://get.docker.com | sh` then `sudo usermod -aG docker $USER`, then reconnect.",
+      "Take a Proxmox Snapshot of the VM now — your clean baseline and fearless rollback point.",
+      "(Optional) Clone it to a Template so future VMs are one click."],
+    doneWhen:"`docker run hello-world` succeeds inside the VM, and you've taken a snapshot of the clean install.",
+    skills:["VM lifecycle","Ubuntu Server","Docker install","snapshots"], tools:["Proxmox","Ubuntu Server 26.04 LTS","Docker"],
+    docs:{label:"documentation.ubuntu.com/server", url:"https://documentation.ubuntu.com/server/"} },
+
+  { id:"dns-net", tier:0, emoji:"🌐", name:"DNS safety net", what:"Make sure the house keeps internet even when this laptop is off.", time:"~5 min",
+    win:"Five-minute insurance so tinkering never takes the whole household's internet down with it.",
+    prep:[
+      "Admin access to your home router.",
+      "The plan: Pi-hole (next, in Tier 1) becomes your primary DNS — this sets the backup ahead of time."],
+    steps:[
+      "Log into your router's admin page.",
+      "Find the DHCP / DNS settings where you'll later set the Pi-hole's IP as the primary DNS.",
+      "Set a reliable public resolver as the SECONDARY DNS — e.g. `1.1.1.1` (Cloudflare) or `9.9.9.9` (Quad9).",
+      "Trade-off to know: a secondary DNS means some devices may occasionally bypass Pi-hole's blocking. That's the price of resilience — for strict blocking later you can drop the secondary and trust Pi-hole's own uptime.",
+      "Save. You'll fill in the Pi-hole IP as the primary during the Pi-hole quest."],
+    doneWhen:"Your router has a public secondary DNS set, so the internet survives this laptop being off.",
+    skills:["DNS resolution","router / DHCP config","resilience thinking"], tools:["Your router","Cloudflare / Quad9"],
+    docs:{label:"docs.pi-hole.net", url:"https://docs.pi-hole.net"} },
+
   { id:"pihole", tier:1, emoji:"🛡️", name:"Pi-hole", what:"Network-wide ad blocker — ads vanish on every device.", time:"~30–60 min",
     win:"Instant, household-visible payoff with near-zero upkeep. The classic 'gateway drug' to self-hosting.",
     prep:[
@@ -489,11 +557,11 @@ const QUESTS = [
 const LEVELS = [
   { min:0,  title:"Curious Novice", emoji:"🌱" },
   { min:1,  title:"Apprentice",     emoji:"🔧" },
-  { min:4,  title:"Tinkerer",       emoji:"🛠️" },
-  { min:8,  title:"Operator",       emoji:"⚙️" },
-  { min:12, title:"Engineer",       emoji:"🚀" },
-  { min:16, title:"Architect",      emoji:"🏗️" },
-  { min:18, title:"DevOps Hero",    emoji:"🏆" },
+  { min:5,  title:"Tinkerer",       emoji:"🛠️" },
+  { min:9,  title:"Operator",       emoji:"⚙️" },
+  { min:13, title:"Engineer",       emoji:"🚀" },
+  { min:18, title:"Architect",      emoji:"🏗️" },
+  { min:22, title:"DevOps Hero",    emoji:"🏆" },
 ];
 
 const KEY = "devops-quest-map-v1";
@@ -616,7 +684,7 @@ function render(){
     : `<div class="hint">👉 Tap 'Steps & details' to open a quest's full playbook · tap the circle to complete · tap ⚡ to set your ONE focus · progress saves automatically.</div>`;
 
   const allDone = c===TOTAL
-    ? `<div class="hero-done"><div class="t">🏆 DevOps Hero unlocked!</div><p>You finished all 18 quests. Go put that capstone pipeline at the top of your CV.</p></div>`
+    ? `<div class="hero-done"><div class="t">🏆 DevOps Hero unlocked!</div><p>You finished all ${TOTAL} quests. Go put that capstone pipeline at the top of your CV.</p></div>`
     : "";
 
   document.getElementById("board").innerHTML = `
@@ -645,7 +713,7 @@ function render(){
 }
 
 (function(){
-  const map = {1:["#16a34a","#e7f8ec","#4ade80"],2:["#2563eb","#e6effc","#60a5fa"],3:["#c2740a","#fdf3da","#f0b429"],4:["#ea580c","#ffeede","#fb923c"],5:["#dc2626","#fde9e9","#f87171"]};
+  const map = {0:["#556070","#eceff3","#9aa7b5"],1:["#16a34a","#e7f8ec","#4ade80"],2:["#2563eb","#e6effc","#60a5fa"],3:["#c2740a","#fdf3da","#f0b429"],4:["#ea580c","#ffeede","#fb923c"],5:["#dc2626","#fde9e9","#f87171"]};
   const r = document.documentElement.style;
   for(const k in map){ r.setProperty(`--tier${k}-a`,map[k][0]); r.setProperty(`--tier${k}-s`,map[k][1]); r.setProperty(`--tier${k}-b`,map[k][2]); }
 })();
